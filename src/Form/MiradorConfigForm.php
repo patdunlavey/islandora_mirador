@@ -7,6 +7,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\islandora_mirador\Annotation\IslandoraMiradorPlugin;
 use Drupal\islandora_mirador\IslandoraMiradorPluginManager;
+use Drupal\search_api\IndexInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Mirador Settings Form.
@@ -73,9 +74,139 @@ class MiradorConfigForm extends ConfigFormBase {
       '#global_types' => FALSE,
       '#token_types' => ['node'],
     ];
+    $index_options = [];
+    foreach($this->getIndexes() as $index_id => $index) {
+      $index_options[$index_id] = $index->label();
+    }
+
+    if(count($index_options) > 0) {
+
+    }
+    $form['solr_hocr_fieldset'] = [
+      '#type' => 'fieldset',
+      '#title' => $this->t('OCR Highlighting'),
+      ];
+    $form['solr_hocr_fieldset']['info'] = [
+      '#type' => 'item',
+      '#markup' => t("Refer to the islandora_mirador documentation for how to set up text search highlighting in Mirador.")
+    ];
+
+    if (count($index_options)) {
+      $form['solr_hocr_fieldset']['solr_hocr_index'] = [
+        '#type' => 'select',
+        '#title' => t('Select the solr index that you are using to hold your ocr highlight content'),
+        '#options' => $index_options,
+        '#default_value' => $config->get('solr_hocr_index'),
+        '#empty_option' => t('-None-'),
+        '#empty_value' => "",
+        '#ajax' => [
+          'callback' => '::solrHocrFieldListCallback',
+          'disable-refocus' => FALSE,
+          'event' => 'change',
+          'wrapper' => 'edit-solr_hocr_field',
+          'progress' => [
+            'type' => 'throbber',
+            'message' => $this->t('Loading solr index field options...'),
+          ],
+        ],
+      ];
+      $form['solr_hocr_fieldset']['solr_hocr_field'] = [
+        '#validated' => TRUE,
+        '#type' => 'select',
+        '#title' => t('Select the solr field that indexes your ocr highlight content'),
+        '#options' => $config->get('solr_hocr_index') ? $this->hocrFieldOptionsFromIndexId($config->get('solr_hocr_index')) : [],
+        '#default_value' => $config->get('solr_hocr_field'),
+        '#empty_option' => t('-None-'),
+        '#empty_value' => "",
+        '#prefix' => '<div id="edit-solr_hocr_field">',
+        '#suffix' => '</div>',
+        '#states' => [
+          'invisible' => [
+            ':input[name="solr_hocr_index"]' => ['value' => ''],
+          ],
+        ],
+      ];
+    }
+    else {
+      $form['solr_hocr_fieldset']['no-index'] = [
+        '#type' => 'item',
+        '#markup' => '<div class="warning">' . t("No solr index found that contains a `Fulltext \"ocr_highlight\"` field.") . '</div>',
+      ];
+    }
 
     return $form;
   }
+
+  public function solrHocrFieldListCallback(array &$form, FormStateInterface $form_state) {
+    // Prepare our textfield. check if the example select field has a selected option.
+    if ($index_id = $form_state->getValue('solr_hocr_index')) {
+      $form['solr_hocr_fieldset']['solr_hocr_field']['#options'] = $this->hocrFieldOptionsFromIndexId($index_id);
+      $form['solr_hocr_fieldset']['solr_hocr_field']['#default_value'] = $form_state->getValue('solr_hocr_field') ?? "";
+    }
+    else {
+      $form['solr_hocr_fieldset']['solr_hocr_field']['#options'] = [];
+    }
+    // Return the updated select element.
+    return $form['solr_hocr_fieldset']['solr_hocr_field'];
+  }
+
+  /**
+   * Get list of search_api_solr indexes that...
+   * 1. Index nodes (datasource id = entity:node)
+   * 2. Include the text_ocr field type definition.
+   *
+   * @return \Drupal\search_api\IndexInterface[]|void
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   * @throws \Drupal\search_api\SearchApiException
+   */
+  private function getIndexes($index_id = NULL) {
+    $datasource_id = 'entity:node';
+
+    /** @var \Drupal\search_api\IndexInterface[] $indexes */
+    $indexes = \Drupal::entityTypeManager()
+      ->getStorage('search_api_index')
+      ->loadMultiple(!empty($index_id) ? [$index_id] : NULL);
+
+    foreach ($indexes as $index_id => $index) {
+      $dependencies = $index->getServerInstance()->getDependencies();
+      if (!$index->isValidDatasource($datasource_id)
+        || empty($dependencies['config'])
+        || !in_array('search_api_solr.solr_field_type.text_ocr_und_7_0_0', $dependencies['config'])
+      ) {
+        unset($indexes[$index_id]);
+      }
+
+      return $indexes;
+    }
+  }
+
+
+  private function hocrFieldOptionsFromIndexId($index_id) {
+    $options = [];
+    if(!empty($index_id)) {
+      // Start by loading all the field type configs and getting a list of ocr_highlight field types.
+      $configs = \Drupal::service('config.storage')->readMultiple(\Drupal::service('config.storage')->listAll('search_api_solr.solr_field_type'));
+      foreach ($configs as $config) {
+        if (!empty($config['custom_code']) && strpos($config['custom_code'], 'ocr_highlight') === 0) {
+          // Here we end up with an array of search_api solr_text_custom fields and their corresponding language.
+          $hocr_solr_field_languages['solr_text_custom:' . $config['custom_code']][] = $config['field_type_language_code'];
+        }
+      }
+      $search_api_index = $this->getIndexes($index_id)[$index_id] ?? NULL;
+      if($search_api_index) {
+        $all_solr_fields = $search_api_index->getFields();
+        foreach ($all_solr_fields as $field_id => $field_definition) {
+          $field_def_type = $field_definition->getType();
+          if (!empty($hocr_solr_field_languages[$field_def_type])) {
+            $options[$field_id] = $field_definition->getLabel();
+          }
+        }
+      }
+    }
+    return $options;
+  }
+
 
   /**
    * {@inheritdoc}
@@ -85,6 +216,8 @@ class MiradorConfigForm extends ConfigFormBase {
     $config->set('mirador_library_installation_type', $form_state->getValue('mirador_library_installation_type'));
     $config->set('mirador_enabled_plugins', $form_state->getValue('mirador_enabled_plugins'));
     $config->set('iiif_manifest_url', $form_state->getValue('iiif_manifest_url'));
+    $config->set('solr_hocr_index', $form_state->getValue('solr_hocr_index'));
+    $config->set('solr_hocr_field', $form_state->getValue('solr_hocr_field'));
     $config->save();
     parent::submitForm($form, $form_state);
   }

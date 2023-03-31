@@ -10,6 +10,8 @@ use Drupal\Core\Config\ImmutableConfig;
 
 use Drupal\islandora_mirador\IslandoraMiradorPluginPluginBase;
 use Drupal\islandora_mirador\IslandoraMiradorPluginInterface;
+use Solarium\Core\Query\QueryInterface as SolariumQueryInterface;
+use Drupal\search_api\Query\QueryInterface;
 
 /**
  * Implements hook_theme().
@@ -72,5 +74,37 @@ function islandora_mirador_library_info_alter(&$libraries, $extension) {
       unset($libraries['mirador']['license']);
       $libraries['mirador']['js']['/libraries/mirador/dist/main.js'] = [];
     }
+  }
+}
+
+/**
+ * Implements hook_search_api_solr_query_alter().
+ *
+ * Add ocr highlight params into the solr query.
+ *
+ * It's a mystery as to why it should be necessary to alter the solarium query in order to add the
+ * highlight parameters. We should be able to add them inside the search_api query build using the
+ * `solr_param_` method to inject solarium parameters: https://git.drupalcode.org/project/search_api_solr/-/blob/4.x/src/Plugin/search_api/backend/SearchApiSolrBackend.php#L1605-1610
+ * However that is not working, and so we're reduced to this ugly alter hook.
+ *
+ */
+function islandora_mirador_search_api_solr_query_alter(SolariumQueryInterface $solarium_query, QueryInterface $query) {
+  // To get a list of solarium events:
+  // @see http://solarium.readthedocs.io/en/stable/customizing-solarium/#plugin-system
+  if ($query->getOption('no_highlight')) {
+    $solarium_query->addParam('hl', 'false');
+    /* @var \Solarium\Component\Highlighting\Highlighting $hl */
+    $hl = $solarium_query->getHighlighting();
+    $hl->clearFields();
+  }
+
+  if ($query->getOption('ocr_highlight')) {
+    /* @var \Solarium\Component\Highlighting\Highlighting $hl */
+    $hl = $solarium_query->getHighlighting();
+    $hl->clearFields();
+
+    $solarium_query->addParam('hl.ocr.fl', $query->getOption('ocr_highlight'));
+    $solarium_query->addParam('hl.ocr.absoluteHighlights', 'on');
+    $solarium_query->addParam('hl.method', 'UnifiedHighlighter');
   }
 }
