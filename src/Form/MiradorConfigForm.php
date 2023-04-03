@@ -161,7 +161,7 @@ class MiradorConfigForm extends ConfigFormBase {
    * @throws \Drupal\search_api\SearchApiException
    */
   private function getIndexes($index_id = NULL) {
-    $datasource_id = 'entity:node';
+    $datasource_id = 'entity:media';
 
     /** @var \Drupal\search_api\IndexInterface[] $indexes */
     $indexes = \Drupal::entityTypeManager()
@@ -182,23 +182,32 @@ class MiradorConfigForm extends ConfigFormBase {
   }
 
 
+  /**
+   * @param $index_id
+   *
+   * Get a list of the media fields that use the ocr_highlight solr field type.
+   *
+   * @return array
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   * @throws \Drupal\search_api\SearchApiException
+   */
   private function hocrFieldOptionsFromIndexId($index_id) {
     $options = [];
     if(!empty($index_id)) {
-      // Start by loading all the field type configs and getting a list of ocr_highlight field types.
-      $configs = \Drupal::service('config.storage')->readMultiple(\Drupal::service('config.storage')->listAll('search_api_solr.solr_field_type'));
-      foreach ($configs as $config) {
-        if (!empty($config['custom_code']) && strpos($config['custom_code'], 'ocr_highlight') === 0) {
-          // Here we end up with an array of search_api solr_text_custom fields and their corresponding language.
-          $hocr_solr_field_languages['solr_text_custom:' . $config['custom_code']][] = $config['field_type_language_code'];
-        }
-      }
       $search_api_index = $this->getIndexes($index_id)[$index_id] ?? NULL;
       if($search_api_index) {
-        $all_solr_fields = $search_api_index->getFields();
-        foreach ($all_solr_fields as $field_id => $field_definition) {
-          $field_def_type = $field_definition->getType();
-          if (!empty($hocr_solr_field_languages[$field_def_type])) {
+        // Start by loading all the field type configs and getting a list of ocr_highlight field types.
+        $configs = \Drupal::service('config.storage')->readMultiple(\Drupal::service('config.storage')->listAll('search_api_solr.solr_field_type'));
+        foreach ($configs as $config) {
+          if (!empty($config['custom_code']) && strpos($config['custom_code'], 'ocr_highlight') === 0) {
+            // Here we end up with an array of search_api solr_text_custom fields and their corresponding language.
+            $hocr_solr_field_languages['solr_text_custom:' . $config['custom_code']][] = $config['field_type_language_code'];
+          }
+        }
+        $media_solr_fields = $search_api_index->getFieldsByDatasource('entity:media');
+        foreach ($media_solr_fields as $field_id => $field_definition) {
+          if (!empty($hocr_solr_field_languages[$field_definition->getType()])) {
             $options[$field_id] = $field_definition->getLabel();
           }
         }
