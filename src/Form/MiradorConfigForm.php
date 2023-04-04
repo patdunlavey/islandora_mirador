@@ -98,7 +98,7 @@ class MiradorConfigForm extends ConfigFormBase {
         '#type' => 'select',
         '#title' => t('Paged Content IIIF Manifest view/display'),
         '#description' => t("Select the view/display being used to generate the IIIF manifest for repository items identified as \"Paged Content\" (having multiple \"Page\" objects as children)."),
-        '#options' => $this->getViewsDisplayOptions('paged_content') ?? [],
+        '#options' => $this->getIiifManifestViewsDisplayOptions('paged_content') ?? [],
         '#default_value' => $config->get('solr_hocr_paged_content_display'),
         '#empty_option' => t('-None-'),
         '#empty_value' => "",
@@ -108,7 +108,7 @@ class MiradorConfigForm extends ConfigFormBase {
         '#type' => 'select',
         '#title' => t('Single Page IIIF Manifest view/display'),
         '#description' => t("Select the view/display being used to generate the IIIF manifest for repository items identified as a single \"Page\"."),
-        '#options' => $this->getViewsDisplayOptions('page') ?? [],
+        '#options' => $this->getIiifManifestViewsDisplayOptions('page') ?? [],
         '#default_value' => $config->get('solr_hocr_page_display'),
         '#empty_option' => t('-None-'),
         '#empty_value' => "",
@@ -202,7 +202,17 @@ class MiradorConfigForm extends ConfigFormBase {
     }
   }
 
-  private function getViewsDisplayOptions(string $relatedTo) {
+  /**
+   * Provide form options lists to select view and display that generate iiif manifests for
+   * "Paged Content" and "Page" objects.
+   *
+   * @param  string  $manifestType
+   *  'page' or 'paged_content'
+   *
+   * @return array
+   *  An options list of identifiers constructed as `[view id]/[display id]`.
+   */
+  private function getIiifManifestViewsDisplayOptions(string $manifestType) {
     $options = [];
     $allViews = Views::getAllViews();
     /** @var Drupal\views\Entity\View $aView */
@@ -213,7 +223,7 @@ class MiradorConfigForm extends ConfigFormBase {
           if(!empty($display['display_options']['style']['type']) && $display['display_options']['style']['type'] == 'iiif_manifest') {
             $display = $aView->getDisplay($displayId);
             $arguments = $display['display_options']['arguments'] ?? $default_arguments;
-            switch($relatedTo) {
+            switch($manifestType) {
               case 'paged_content':
                 if(!empty($arguments['field_member_of_target_id']) && $arguments['field_member_of_target_id']['relationship'] == 'field_media_of') {
                   $options[$aView->id() . "/" . $displayId] = $aView->label() . " (" . $aView->id() . ") / " . $display['display_title'] . " (". $displayId . ")";
