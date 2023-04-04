@@ -58,7 +58,7 @@ To prepare to perform text searches within Mirador, islandora_mirador requires s
 ![solr-media-file-field_editable_hocr_text.png](docs/solr-media-file-field_editable_hocr_text.png)
 
 Once these steps are done, then there are a couple additional configurations needed on the Islandora Miradora configuration form.
-![islandora_mirador-config-form-ocr-highlighting.png](ddocs/islandora_mirador-config-form-ocr-highlighting.png)
+![islandora_mirador-config-form-ocr-highlighting.png](docs/islandora_mirador-config-form-ocr-highlighting.png)
 - Select the views and displays that are used to generate your IIIF Manifests for "Paged Content" and "Page" objects, respectively.
 - Select the solr field in which you are indexing the hocr editable text field on media entities. To do this, you must first select which solr index this field is found in (normally there is just one).
 
