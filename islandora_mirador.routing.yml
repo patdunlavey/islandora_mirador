@@ -7,16 +7,16 @@ islandora_mirador.miradorconfig:
     _permission: 'administer site configuration'
 # Search Highlight Endpoint for a given Node.
 islandora_mirador.hocr_search:
-  path: '/node/{node}/hocr-annotations-search/{page}'
+  path: '/node/{node}/hocr-annotations-search/{canvas}'
   methods: [GET]
   defaults:
     _controller: '\Drupal\islandora_mirador\Controller\OcrSearchController::search'
-    page: 'all'
+    canvas: 'all'
   options:
     no_cache: TRUE
     parameters:
       node:
         type: 'entity:node'
-      page: 'all'
+      canvas: 'all'
   requirements:
     _entity_access: 'node.view'
