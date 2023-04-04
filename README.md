@@ -38,6 +38,30 @@ The UPEI Robertson Library maintains a version of the Mirador library that inclu
 If you have a local build, put it in
 your webroot at libraries/mirador/dist/main.js.
 
+### Search Highlighting in Mirador
+
+To prepare to perform text searches within Mirador, islandora_mirador requires several preliminary configuration steps:
+- That the [solr-ocrhighlighting](https://github.com/dbmdz/solr-ocrhighlighting) plugin be installed in your islandora installation's solr server in `/opt/solr/server/solr/contrib/ocrhighlighting/lib`. This might be done using the following commands in a typical docker setup:
+```
+	curl -k -L https://github.com/dbmdz/solr-ocrhighlighting/releases/download/0.7.2/solr-ocrhighlighting-0.7.2.jar > data/solr-ocrhighlighting.jar
+	docker-compose exec -T solr with-contenv bash -lc "mkdir -p /opt/solr/server/solr/contrib/ocrhighlighting/lib"
+	docker cp data/solr-ocrhighlighting.jar $$(docker-compose ps -q solr):/opt/solr/server/solr/contrib/ocrhighlighting/lib/solr-ocrhighlighting.jar
+	docker-compose exec -T solr with-contenv bash -lc "chown -R solr:solr /opt/solr/server/solr/contrib/ocrhighlighting"
+	docker-compose restart solr
+
+```
+- The schema.xml and solrconfig.xml files, located at `/opt/solr/server/solr/ISLANDORA/conf/` in your solr container, need to be edited. Samples can be found in `docs/solr-ocr-setup` distributed with this module):
+  - The solrconfig.xml needs to be edited to load the `solr-ocrhighlighting-0.7.2.jar` file, and to define a "ocrHighlight" search component that uses it.
+  - The schema.xml needs to be edited to add a solr field named "ocr_text".
+- Search api solr field types be added which define "ocr_highlight" field types for each language that you support in your Islandora installation. Typically, english (`en`) and "undefined" (`und`) field types would be needed. Configuration files for these can be found in `docs/solr-ocr-setup` distributed with this module.
+- In your solr index you will need to enable media entity indexing, and add a field that indexes the editable hocr text field on the file media type (`field_editable_hocr_text`)
+![solr-media-file-field_editable_hocr_text.png](docs/solr-media-file-field_editable_hocr_text.png)
+
+Once these steps are done, then there are a couple additional configurations needed on the Islandora Miradora configuration form.
+![islandora_mirador-config-form-ocr-highlighting.png](ddocs/islandora_mirador-config-form-ocr-highlighting.png)
+- Select the views and displays that are used to generate your IIIF Manifests for "Paged Content" and "Page" objects, respectively.
+- Select the solr field in which you are indexing the hocr editable text field on media entities. To do this, you must first select which solr index this field is found in (normally there is just one).
+
 ## Usage
 
 The module provides a "Mirador" view mode that can be selected as a display hint when editing an Islandora Repository Item object.
@@ -59,6 +83,7 @@ plugins are included in the particular build of Mirador Integration. The Roberts
 - **IIIF Manifest URL:** You can set the URL pattern to retrieve the IIIF manifest for a piece of content. Default Islandora comes with a REST export view titled "IIIF Manifest", found at `/admin/structure/views/view/iiif_manifest`. The URL to provide can be found in the single page display's path settings.<br />![](docs/iiif_manifest_view_path_settings.png)
 <br />
 Replace `%node` with `[node:nid]`, and prepend with the domain of your installation:< br />![mirador_settings_manifest_url.png](docs%2Fmirador_settings_manifest_url.png)
+- **OCR HIGHLIGHTING:** Refer to the
 
 ## Plugins
 
