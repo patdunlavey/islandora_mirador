@@ -8,6 +8,7 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\islandora_mirador\Annotation\IslandoraMiradorPlugin;
 use Drupal\islandora_mirador\IslandoraMiradorPluginManager;
 use Drupal\search_api\IndexInterface;
+use Drupal\views\Views;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Mirador Settings Form.
@@ -92,6 +93,26 @@ class MiradorConfigForm extends ConfigFormBase {
     ];
 
     if (count($index_options)) {
+      $form['solr_hocr_fieldset']['solr_hocr_paged_content_display'] = [
+        '#validated' => TRUE,
+        '#type' => 'select',
+        '#title' => t('Paged Content IIIF Manifest view/display'),
+        '#description' => t("Select the view/display being used to generate the IIIF manifest for repository items identified as \"Paged Content\" (having multiple \"Page\" objects as children)."),
+        '#options' => $this->getViewsDisplayOptions('paged_content') ?? [],
+        '#default_value' => $config->get('solr_hocr_paged_content_display'),
+        '#empty_option' => t('-None-'),
+        '#empty_value' => "",
+      ];
+      $form['solr_hocr_fieldset']['solr_hocr_page_display'] = [
+        '#validated' => TRUE,
+        '#type' => 'select',
+        '#title' => t('Single Page IIIF Manifest view/display'),
+        '#description' => t("Select the view/display being used to generate the IIIF manifest for repository items identified as a single \"Page\"."),
+        '#options' => $this->getViewsDisplayOptions('page') ?? [],
+        '#default_value' => $config->get('solr_hocr_page_display'),
+        '#empty_option' => t('-None-'),
+        '#empty_value' => "",
+      ];
       $form['solr_hocr_fieldset']['solr_hocr_index'] = [
         '#type' => 'select',
         '#title' => t('Select the solr index that you are using to hold your ocr highlight content'),
@@ -181,6 +202,37 @@ class MiradorConfigForm extends ConfigFormBase {
     }
   }
 
+  private function getViewsDisplayOptions(string $relatedTo) {
+    $options = [];
+    $allViews = Views::getAllViews();
+    /** @var Drupal\views\Entity\View $aView */
+    foreach($allViews as $aView) {
+      if($aView->get('base_table') == 'media_field_data') {
+        $default_arguments = $aView->getDisplay('default')['display_options']['arguments'] ?? [];
+        foreach($aView->get('display') as $displayId => $display) {
+          if(!empty($display['display_options']['style']['type']) && $display['display_options']['style']['type'] == 'iiif_manifest') {
+            $display = $aView->getDisplay($displayId);
+            $arguments = $display['display_options']['arguments'] ?? $default_arguments;
+            switch($relatedTo) {
+              case 'paged_content':
+                if(!empty($arguments['field_member_of_target_id']) && $arguments['field_member_of_target_id']['relationship'] == 'field_media_of') {
+                  $options[$aView->id() . "/" . $displayId] = $aView->label() . " (" . $aView->id() . ") / " . $display['display_title'] . " (". $displayId . ")";
+                }
+                break;
+              case 'page':
+                if(!empty($arguments['field_media_of_target_id']) && (empty($arguments['field_media_of_target_id']['relationship'] == 'none') || $arguments['field_media_of_target_id']['relationship'] == 'none')) {
+                  $options[$aView->id() . "/" . $displayId] = $aView->label() . " (" . $aView->id() . ") / " . $display['display_title'] . " (". $displayId . ")";
+                }
+                break;
+            }
+          }
+        }
+      }
+    }
+    return $options;
+
+  }
+
 
   /**
    * @param $index_id
@@ -225,6 +277,8 @@ class MiradorConfigForm extends ConfigFormBase {
     $config->set('mirador_library_installation_type', $form_state->getValue('mirador_library_installation_type'));
     $config->set('mirador_enabled_plugins', $form_state->getValue('mirador_enabled_plugins'));
     $config->set('iiif_manifest_url', $form_state->getValue('iiif_manifest_url'));
+    $config->set('solr_hocr_paged_content_display', $form_state->getValue('solr_hocr_paged_content_display'));
+    $config->set('solr_hocr_page_display', $form_state->getValue('solr_hocr_page_display'));
     $config->set('solr_hocr_index', $form_state->getValue('solr_hocr_index'));
     $config->set('solr_hocr_field', $form_state->getValue('solr_hocr_field'));
     $config->save();
