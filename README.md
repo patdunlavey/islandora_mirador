@@ -38,29 +38,6 @@ The UPEI Robertson Library maintains a version of the Mirador library that inclu
 If you have a local build, put it in
 your webroot at libraries/mirador/dist/main.js.
 
-### Search Highlighting in Mirador
-
-To prepare to perform text searches within Mirador, islandora_mirador requires several preliminary configuration steps:
-- That the [solr-ocrhighlighting](https://github.com/dbmdz/solr-ocrhighlighting) plugin be installed in your islandora installation's solr server in `/opt/solr/server/solr/contrib/ocrhighlighting/lib`. This might be done using the following commands in a typical docker setup:
-```
-	curl -k -L https://github.com/dbmdz/solr-ocrhighlighting/releases/download/0.7.2/solr-ocrhighlighting-0.7.2.jar > data/solr-ocrhighlighting.jar
-	docker-compose exec -T solr with-contenv bash -lc "mkdir -p /opt/solr/server/solr/contrib/ocrhighlighting/lib"
-	docker cp data/solr-ocrhighlighting.jar $$(docker-compose ps -q solr):/opt/solr/server/solr/contrib/ocrhighlighting/lib/solr-ocrhighlighting.jar
-	docker-compose exec -T solr with-contenv bash -lc "chown -R solr:solr /opt/solr/server/solr/contrib/ocrhighlighting"
-	docker-compose restart solr
-
-```
-- The schema.xml and solrconfig.xml files, located at `/opt/solr/server/solr/ISLANDORA/conf/` in your solr container, need to be edited. Samples can be found in `docs/solr-ocr-setup` distributed with this module):
-  - The solrconfig.xml needs to be edited to load the `solr-ocrhighlighting-0.7.2.jar` file, and to define a "ocrHighlight" search component that uses it.
-  - The schema.xml needs to be edited to add a solr field named "ocr_text".
-- Search api solr field types be added which define "ocr_highlight" field types for each language that you support in your Islandora installation. Typically, english (`en`) and "undefined" (`und`) field types would be needed. Configuration files for these can be found in `docs/solr-ocr-setup` distributed with this module.
-- In your solr index you will need to enable media entity indexing, and add a field that indexes the editable hocr text field on the file media type (`field_editable_hocr_text`)
-![solr-media-file-field_editable_hocr_text.png](docs/solr-media-file-field_editable_hocr_text.png)
-
-Once these steps are done, then there are a couple additional configurations needed on the Islandora Miradora configuration form.
-![islandora_mirador-config-form-ocr-highlighting.png](docs/islandora_mirador-config-form-ocr-highlighting.png)
-- Select the views and displays that are used to generate your IIIF Manifests for "Paged Content" and "Page" objects, respectively.
-- Select the solr field in which you are indexing the hocr editable text field on media entities. To do this, you must first select which solr index this field is found in (normally there is just one).
 
 ## Usage
 
@@ -82,7 +59,9 @@ plugins are included in the particular build of Mirador Integration. The Roberts
 
 - **IIIF Manifest URL:** You can set the URL pattern to retrieve the IIIF manifest for a piece of content. Default Islandora comes with a REST export view titled "IIIF Manifest", found at `/admin/structure/views/view/iiif_manifest`. The URL to provide can be found in the single page display's path settings.<br />![](docs/iiif_manifest_view_path_settings.png)
 <br />
-Replace `%node` with `[node:nid]`, and prepend with the domain of your installation:< br />![mirador_settings_manifest_url.png](docs%2Fmirador_settings_manifest_url.png)
+Replace `%node` with `[node:nid]`, and prepend with the domain of your installation:
+![mirador_settings_manifest_url.png](docs/mirador_settings_manifest_url.png)
+
 
 ## Plugins
 
@@ -133,16 +112,16 @@ within the viewer.
 ### Setting up hOCR
 To display a text overlay, Mirador must be provided with hOCR text data - which is OCR'd text that includes position information for the extracted text relative to the image that is being displayed. Here are the steps:
 1. Go to "Administration » Structure » Media Types", select the "**File**" media type, and click "**Manage Fields**".
-2. Add a new field to the **File** media type called "**hOCR extracted Text**". Set the allowed file extensions to "xml"<br />![media-file-field_hocr_extracted-file-label.png](docs%2Fmedia-file-field_hocr_extracted-file-label.png)  ![media-file-field_hocr_extracted-file-extensions.png](docs%2Fmedia-file-field_hocr_extracted-file-extensions.png)
-3. Ensure the new field is enabled in the Manage Display tab<br/>![media-file-field_hocr_extracted-file-display.png](docs%2Fmedia-file-field_hocr_extracted-file-display.png)
-4. Go to "Administration » Configuration » System » Actions" and click "**Create New Advanced Action**" with the "**Generate Extracted Text for Media Attachment**" action type.<br />![action-hocr-extracted-text.png](docs%2Faction-hocr-extracted-text.png)<br />
-![action-hocr-extracted-text-config.png](docs%2Faction-hocr-extracted-text-config.png)<br />
+2. Add a new field to the **File** media type called "**hOCR extracted Text**". Set the allowed file extensions to "xml"<br />![media-file-field_hocr_extracted-file-label.png](docs/media-file-field_hocr_extracted-file-label.png)  ![media-file-field_hocr_extracted-file-extensions.png](docs/media-file-field_hocr_extracted-file-extensions.png)
+3. Ensure the new field is enabled in the Manage Display tab<br/>![media-file-field_hocr_extracted-file-display.png](docs/media-file-field_hocr_extracted-file-display.png)
+4. Go to "Administration » Configuration » System » Actions" and click "**Create New Advanced Action**" with the "**Generate Extracted Text for Media Attachment**" action type.<br />![action-hocr-extracted-text.png](docs/action-hocr-extracted-text.png)<br />
+![action-hocr-extracted-text-config.png](docs/action-hocr-extracted-text-config.png)<br />
     - Give the new action a name that mentions hOCR.<br />
     - In Format field select hOCR Extracted Text with Positional Data
     - For Destination File Field Name select the field you just created (`field_hocr_extracted_text`)
     - Keep *None* for the destination text field
     - And save the action
-5. Go to " Administration » Structure » Context" and edit the **Page Derivatives** context<br />![context-paged-derivatives-add-reaction.png](docs%2Fcontext-paged-derivatives-add-reaction.png)
+5. Go to " Administration » Structure » Context" and edit the **Page Derivatives** context<br />![context-paged-derivatives-add-reaction.png](docs/context-paged-derivatives-add-reaction.png)
     - Click **Add Reaction** and choose "**"Derive File for Existing Media**"
     - In the select box choose the action you created above and save.
 
@@ -155,7 +134,7 @@ Follow these steps to confirm that hOCR is working.
     - Do not add anything to the hOCR Extracted Text field you created. This will be populated when OCR is run on this file.
 4. Save the media.
 5. After about a minute, the extracted text with positional data field should be populated. You can verify this directly by editing the File object and seeing that the "hOCR extracted Text" field now has a file attached to it, and you can view the file and observe that it contains xml text that looks something like this:<br />
-![sample-hocr-xml.png](docs%2Fsample-hocr-xml.png)
+![sample-hocr-xml.png](docs/sample-hocr-xml.png)
 
 ### Configuring the IIIF Manifest view for the Manifest additions
 Assuming hOCR is [set up](#setting-up-hocr) and [tested](#test-hocr)...
@@ -163,15 +142,15 @@ Assuming hOCR is [set up](#setting-up-hocr) and [tested](#test-hocr)...
 We will show how to set up IIIF manifests to include text overlay in Mirador for single pages, and for paged content.
 
 1. Go to "Administration » Structure » Views" and edit the **IIIF Manifest** view.
-2. There should be two displays, one for single-page nodes, and one for paged content. They are distinguished by their Contextual filters, found under the "Advanced" tab. In both cases, they have relationships for "field_media_of: Content" (required), and "field_media_use: Taxonomy term" (not required)<br />![view-iiif-manifest-all-relationships.png](docs%2Fview-iiif-manifest-all-relationships.png).<br /> However, they differ in their contextual filters:
-    - The single-page contextual filter uses the current Media entity's "Media of" value, matching it with the "Content ID from the URL". The effect of this is to select all Media objects that are attached to the node identified by the current url.<br />![view-iiif-manifest-1page-contextual-filter.png](docs%2Fview-iiif-manifest-1page-contextual-filter.png)
-    - The paged-content contextual filter uses the "Content: Member of" relationship to find Media objects that are attached to children of the current node, identified by "Content ID from URL".<br/>![view-iiif-manifest-paged-contextual-filter.png](docs%2Fview-iiif-manifest-paged-contextual-filter.png)
+2. There should be two displays, one for single-page nodes, and one for paged content. They are distinguished by their Contextual filters, found under the "Advanced" tab. In both cases, they have relationships for "field_media_of: Content" (required), and "field_media_use: Taxonomy term" (not required)<br />![view-iiif-manifest-all-relationships.png](docs/view-iiif-manifest-all-relationships.png).<br /> However, they differ in their contextual filters:
+    - The single-page contextual filter uses the current Media entity's "Media of" value, matching it with the "Content ID from the URL". The effect of this is to select all Media objects that are attached to the node identified by the current url.<br />![view-iiif-manifest-1page-contextual-filter.png](docs/view-iiif-manifest-1page-contextual-filter.png)
+    - The paged-content contextual filter uses the "Content: Member of" relationship to find Media objects that are attached to children of the current node, identified by "Content ID from URL".<br/>![view-iiif-manifest-paged-contextual-filter.png](docs/view-iiif-manifest-paged-contextual-filter.png)
 3. The two displays also differ in their path, under "Path Settings". For the single page manifest display, it would normally be `/node/[%node]/manifest` (matching what was configured on the [islandora mirador configuration page](#configuration)), whereas for the paged-content manifest display, it would normally be `/node/[%node]/book-manifest`.
 
 The rest of the settings for the two displays are identical, as follows...<br />
-![view-iiif-manifest-shared-settings.png](docs%2Fview-iiif-manifest-shared-settings.png)
+![view-iiif-manifest-shared-settings.png](docs/view-iiif-manifest-shared-settings.png)
 1. In the left column, under "Fields", add "hOCR Extracted Text".
-2. In the left column, under "Format", the Style plugin "IIIF Manifest" should be selected. Click "Settings". You will see two sets of checkboxes - "Tile source field(s)" and "Structured OCR data file field". Under "Structured OCR data file field", check "Media: hOCR extracted Text".<br />![view-iiif-manifest-style-settings.png](docs%2Fview-iiif-manifest-style-settings.png)
+2. In the left column, under "Format", the Style plugin "IIIF Manifest" should be selected. Click "Settings". You will see two sets of checkboxes - "Tile source field(s)" and "Structured OCR data file field". Under "Structured OCR data file field", check "Media: hOCR extracted Text".<br />![view-iiif-manifest-style-settings.png](docs/view-iiif-manifest-style-settings.png)
 3. In the "Filter criteria" section of the form, ensure that the "field_media_use: Taxonomy Term" filter is set to filter on the OriginalFile media term (not ServiceFile).
 4. Save the view.
 
@@ -185,16 +164,42 @@ To test...
 
 Islandora uses contexts to control which view mode is used when displaying different Islandora content types. _Note that the following instructions are just one of many possible ways to configure this._
 
-If not already present, you will need to add Mirador display contexts for single page and paged content types:<br />![context-mirador-displays.png](docs%2Fcontext-mirador-displays.png)
+If not already present, you will need to add Mirador display contexts for single page and paged content types:<br />![context-mirador-displays.png](docs/context-mirador-displays.png)
 
 Configure contexts at "Administration » Structure » Context".
 
-- For single page ("Mirador") context, we condition on the "Node has term" "Mirador" AND "Page", and set the reaction to set the view mode to "Mirador":<br />![context-mirador.png](docs%2Fcontext-mirador.png)<br /><br />
+- For single page ("Mirador") context, we condition on the "Node has term" "Mirador" AND "Page", and set the reaction to set the view mode to "Mirador":<br />![context-mirador.png](docs/context-mirador.png)<br /><br />
 
-- For multi-page ("Paged Content - Mirador") context, we condition on the "Node has term" "Mirador" AND "Paged Content"<br />![context-mirador-paged-condition.png](docs%2Fcontext-mirador-paged-condition.png)<br />...and set the reaction to show the Mirador block in the content region <br />![context-mirador-paged-block-content.png](docs%2Fcontext-mirador-paged-block-content.png)<br />... which is configured using `.../book-manifest` for the IIIF Manifest URL<br />![context-mirador-paged-block-config.png](docs%2Fcontext-mirador-paged-block-config.png)
+- For multi-page ("Paged Content - Mirador") context, we condition on the "Node has term" "Mirador" AND "Paged Content"<br />![context-mirador-paged-condition.png](docs/context-mirador-paged-condition.png)<br />...and set the reaction to show the Mirador block in the content region <br />![context-mirador-paged-block-content.png](docs/context-mirador-paged-block-content.png)<br />... which is configured using `.../book-manifest` for the IIIF Manifest URL<br />![context-mirador-paged-block-config.png](docs/context-mirador-paged-block-config.png)
 
 As noted previously, this is just one way to set up the Mirador viewer configurations. If, for example, you wanted to always use the Mirador viewer for pages and paged content, you could remove the "Mirador" condition from the "Node has term" condition in these contexts.
 
+### Search Highlighting in Mirador
+
+To prepare to perform text searches within Mirador, islandora_mirador requires several additional configuration steps after those previously made to enable Mirador with text overlay:
+- The [solr-ocrhighlighting](https://github.com/dbmdz/solr-ocrhighlighting) plugin needs to be installed in your islandora installation's solr server in `/opt/solr/server/solr/contrib/ocrhighlighting/lib`. These instructions have been tested with version 0.7.2. This might be done using the following commands (assuming a typical docker setup with a "solr" container):
+```
+	curl -k -L https://github.com/dbmdz/solr-ocrhighlighting/releases/download/0.7.2/solr-ocrhighlighting-0.7.2.jar > data/solr-ocrhighlighting.jar
+	docker-compose exec -T solr with-contenv bash -lc "mkdir -p /opt/solr/server/solr/contrib/ocrhighlighting/lib"
+	docker cp data/solr-ocrhighlighting.jar $$(docker-compose ps -q solr):/opt/solr/server/solr/contrib/ocrhighlighting/lib/solr-ocrhighlighting.jar
+	docker-compose exec -T solr with-contenv bash -lc "chown -R solr:solr /opt/solr/server/solr/contrib/ocrhighlighting"
+	docker-compose restart solr
+
+```
+- The schema.xml and solrconfig.xml files, located at `/opt/solr/server/solr/ISLANDORA/conf/` in your solr container, need to be edited. Samples can be found in `docs/solr-ocr-setup` distributed with this module):
+  - The solrconfig.xml needs to be edited to load the `solr-ocrhighlighting-0.7.2.jar` file, and to define a "ocrHighlight" search component that uses it.
+  - The schema.xml needs to be edited to add a solr field named "ocr_text".
+- Search api solr field types be added which define "ocr_highlight" field types for each language that you support in your Islandora installation. Typically, english (`en`) and "undefined" (`und`) field types would be needed. Configuration files for these can be found in `docs/solr-ocr-setup` distributed with this module.
+- Add another field to the **File** media type, this one to hold the editable hOCR text that is generated. This field will hold the exact same text as that contained by the file that is attached to the extracted hOCR text file field. This field should be of the type "Text (formatted, long)". This could be called "Editable hOCR text".
+- Edit the "hOCR for Media Attachment" action that you created earlier, and add the editable hocr text field as a *Destination Text Field Name*<br />
+![add-text-field-destination-to-hocr-generate-action.png](docs/add-text-field-destination-to-hocr-generate-action.png)
+- In your solr index you will need to enable media entity indexing, and then add a field that indexes the editable hocr text field on the file media type (`field_editable_hocr_text`)
+  ![solr-media-file-field_editable_hocr_text.png](docs/solr-media-file-field_editable_hocr_text.png)
+
+- Finally, on the Islandora Miradora configuration form...
+![islandora_mirador-config-form-ocr-highlighting.png](docs/islandora_mirador-config-form-ocr-highlighting.png)
+  - Select the views and displays that are used to generate your IIIF Manifests for "Paged Content" and "Page" objects, respectively.
+  - Select the solr field in which you are indexing the hocr editable text field on media entities. To do this, you must first select which solr index this field is found in (normally there is just one).
 
 
 ## Documentation
