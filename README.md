@@ -83,7 +83,6 @@ plugins are included in the particular build of Mirador Integration. The Roberts
 - **IIIF Manifest URL:** You can set the URL pattern to retrieve the IIIF manifest for a piece of content. Default Islandora comes with a REST export view titled "IIIF Manifest", found at `/admin/structure/views/view/iiif_manifest`. The URL to provide can be found in the single page display's path settings.<br />![](docs/iiif_manifest_view_path_settings.png)
 <br />
 Replace `%node` with `[node:nid]`, and prepend with the domain of your installation:< br />![mirador_settings_manifest_url.png](docs%2Fmirador_settings_manifest_url.png)
-- **OCR HIGHLIGHTING:** Refer to the
 
 ## Plugins
 
