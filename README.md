@@ -216,6 +216,11 @@ Having problems? Solved a problem? Join the Islandora [communication channels](h
 * If you would like to contribute or have questions, please get involved by attending our weekly [Tech Call](https://github.com/Islandora/islandora-community/wiki/Weekly-Open-Tech-Call), held virtually via Zoom **every Wednesday** at [**1:00pm Eastern Time US**](https://dateful.com/convert/est-edt-eastern-time?t=13). Anyone is welcome to join and ask questions! The Zoom link can be found in the meeting minutes [here](https://github.com/Islandora/islandora-community/wiki/Weekly-Open-Tech-Call).
 
 If you would like to contribute code to the project, you need to be covered by an Islandora Foundation [Contributor License Agreement](https://github.com/Islandora/islandora-community/wiki/Onboarding-Checklist#contributor-license-agreements) or [Corporate Contributor License Agreement](https://github.com/Islandora/islandora-community/wiki/Onboarding-Checklist#contributor-license-agreements). Please see the [Contributor License Agreements](https://github.com/Islandora/islandora-community/wiki/Contributor-License-Agreements) page on the islandora-community wiki for more information.
+## Acknowledgements
+- The IIIF Search API code used in this module, and the solr ocr highlighting configuration that it depends on, is built off of, and gratefully indebted to, the work of [Diego Pino](https://github.com/DiegoPino), [Giancarlo Birello](https://github.com/giancarlobi) and other contributors to the Archipelago Commons open source initiative of the [Metropolitan New York Library Council](https://metro.org/).
+
+
+
 ## License
 
 [GPLv2](http://www.gnu.org/licenses/gpl-2.0.txt)
