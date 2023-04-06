@@ -15,7 +15,16 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\search_api\ParseMode\ParseModePluginManager;
 
 /**
- * A Wrapper Controller to access Twig processed JSON on a URL.
+ * Implements a IIIF Content Search API 1.0 Endpoint.
+ *
+ * This code, and the solr ocr highlighting configuration that it is based on,
+ * is built from and gratefully indebted to the work of Diego Pino, Giancarlo Birello
+ * and other contributors to the Archipelago Commons open source initiative of the
+ * Metropolitan New York Library Council.
+ *
+ * @see https://github.com/esmero/strawberryfield/blob/1.1.0/src/Controller/StrawberryfieldFlavorDatasourceSearchController.php
+ *
+ * @see https://iiif.io/api/search/1.0/
  */
 class OcrSearchController extends ControllerBase {
 
